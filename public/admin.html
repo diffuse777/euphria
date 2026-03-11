@@ -647,6 +647,7 @@ ps002,"NFT Marketplace","Build a secure NFT trading platform.",Blockchain,Interm
                             <div class="section-header">
                                 <div class="section-header-left">📋 Current Teams</div>
                                 <button class="btn btn-outline btn-sm" onclick="loadCurrentTeams()">🔄 Refresh</button>
+                                <button class="btn btn-outline btn-sm" style="margin-left:8px;color:#f87171;border-color:#f87171;" onclick="deleteAllTeams()">🗑 Delete Teams</button>
                             </div>
                             <div class="section-body">
                                 <div id="currentTeamsLoading" class="loading-text">Loading…</div>
@@ -1055,6 +1056,17 @@ function clearTeamsCsv() {
     document.getElementById('teamsCsvPreview').innerHTML = '';
     document.getElementById('teamsCsvActions').style.display = 'none';
     document.getElementById('teamsCsvFileInput').value = '';
+}
+
+async function deleteAllTeams() {
+    try {
+        const res = await fetch('/api/admin/teams', { method: 'DELETE' });
+        if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+        showNotification('✅ The teams have been deleted.');
+        loadCurrentTeams();
+    } catch (err) {
+        showNotification('Delete failed: ' + err.message, true);
+    }
 }
 
 async function loadCurrentTeams() {

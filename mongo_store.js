@@ -310,6 +310,13 @@ class MongoStore {
     return await teams.find({}).toArray();
   }
 
+  async deleteAllTeams() {
+    if (!this.collections) await this.init();
+    const { teams } = this.collections;
+    const result = await teams.deleteMany({});
+    return result.deletedCount || 0;
+  }
+
   async replaceTeamsFromCSV(csvContent) {
     if (!this.collections) await this.init();
     const { teams } = this.collections;

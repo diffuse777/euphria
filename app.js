@@ -383,6 +383,17 @@ app.get('/api/export/all/pdf', async (req, res) => {
   }
 });
 
+// Admin: delete all teams
+app.delete('/api/admin/teams', async (req, res) => {
+  try {
+    const deleted = await db.deleteAllTeams();
+    res.json({ ok: true, deletedCount: deleted });
+  } catch (error) {
+    console.error('Error deleting teams:', error);
+    res.status(500).json({ error: 'Failed to delete teams' });
+  }
+});
+
 // Admin: upload teams CSV (stores in MongoDB - works on Vercel serverless)
 app.post('/api/admin/teams/upload', async (req, res) => {
   try {
