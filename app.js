@@ -1,6 +1,5 @@
 // Monolithic Node.js app serving API and frontend
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
 const MongoStore = require('./mongo_store');
 const app = express();
@@ -47,8 +46,11 @@ function formatProblems(statements) {
 // Ensure database is initialized before handling any requests on Vercel
 let dbReadyPromise = null;
 if (process.env.VERCEL) {
-  dbReadyPromise = (async () => { try { await initializeDatabase(); } catch (e) { console.error('DB init failed:', e); } })();
+  dbReadyPromise = db ? (async () => { try { await initializeDatabase(); } catch (e) { console.error('DB init failed:', e); } })() : null;
   app.use(async (req, res, next) => {
+    if (!db) {
+      return res.status(503).send('<!DOCTYPE html><html><body style="font-family:Arial;padding:40px;text-align:center"><h2>Configuration Required</h2><p>MONGODB_URI is not set. Add it in Vercel Project Settings → Environment Variables.</p></body></html>');
+    }
     try { if (dbReadyPromise) await dbReadyPromise; } catch (_) {}
     next();
   });
@@ -70,39 +72,15 @@ if (process.env.NODE_ENV === 'production') {
 
 // Initialize database - MongoDB only
 const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) {
-  console.error('FATAL: MONGODB_URI environment variable is required. Set it in .env or your environment.');
-  process.exit(1);
-}
 const dbName = process.env.MONGODB_DB || 'hackathon';
 const prefix = process.env.MONGODB_COLLECTION_PREFIX || '';
-const db = new MongoStore(MONGODB_URI, dbName, prefix);
-
-// Teams CSV (optional auto-fill)
-const TEAMS_CSV_PATH = path.join(__dirname, 'teams.csv');
-let teamNumberToTeam = new Map();
-function loadTeamsCSV() {
-  try {
-    if (!fs.existsSync(TEAMS_CSV_PATH)) { teamNumberToTeam = new Map(); return; }
-    const content = fs.readFileSync(TEAMS_CSV_PATH, 'utf8');
-    const lines = content.split(/\r?\n/).filter(Boolean);
-    const [header, ...rows] = lines;
-    const expected = 'teamNumber,teamName,teamLeader';
-    if (!header || header.trim().toLowerCase() !== expected.toLowerCase()) { teamNumberToTeam = new Map(); return; }
-    const map = new Map();
-    rows.forEach((line) => {
-      const parts = line.split(',');
-      if (parts.length < 3) return;
-      const teamNumber = String(parts[0]).trim();
-      const teamName = parts[1] !== undefined ? String(parts[1]).trim() : '';
-      const teamLeader = parts[2] !== undefined ? String(parts[2]).trim() : '';
-      if (!teamNumber) return;
-      map.set(teamNumber, { teamNumber, teamName, teamLeader });
-    });
-    teamNumberToTeam = map;
-  } catch (_) { teamNumberToTeam = new Map(); }
+let db = null;
+if (MONGODB_URI) {
+  db = new MongoStore(MONGODB_URI, dbName, prefix);
+} else {
+  console.error('FATAL: MONGODB_URI environment variable is required. Set it in .env or Vercel Environment Variables.');
+  if (!process.env.VERCEL) process.exit(1);
 }
-loadTeamsCSV();
 
 // SSE for live updates
 const connectedClients = new Set();
@@ -112,6 +90,7 @@ function broadcastUpdate(type, data) {
 }
 
 async function initializeDatabase() {
+  if (!db) return;
   try {
     await db.init();
   } catch (error) {
@@ -134,18 +113,21 @@ app.get('/api/problem-statements', async (req, res) => {
 });
 
 
-app.get('/api/teams', (req, res) => {
+app.get('/api/teams', async (req, res) => {
   try {
     res.set({ 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache', 'Expires': '0' });
-    res.json(Array.from(teamNumberToTeam.values()));
+    const teams = await db.getAllTeams();
+    res.json(teams);
   } catch (_) { res.status(500).json({ error: 'Failed to load teams' }); }
 });
 
-app.get('/api/teams/:teamNumber', (req, res) => {
+app.get('/api/teams/:teamNumber', async (req, res) => {
   res.set({ 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache', 'Expires': '0' });
-  const team = teamNumberToTeam.get(String(req.params.teamNumber).trim());
-  if (!team) return res.status(404).json({ error: 'Team not found' });
-  res.json(team);
+  try {
+    const team = await db.getTeamByNumber(req.params.teamNumber);
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+    res.json(team);
+  } catch (_) { res.status(500).json({ error: 'Team lookup failed' }); }
 });
 
 app.get('/api/events', (req, res) => {
@@ -401,7 +383,7 @@ app.get('/api/export/all/pdf', async (req, res) => {
   }
 });
 
-// Admin: upload teams CSV (overwrites teams.csv)
+// Admin: upload teams CSV (stores in MongoDB - works on Vercel serverless)
 app.post('/api/admin/teams/upload', async (req, res) => {
   try {
     const { csv } = req.body;
@@ -417,13 +399,11 @@ app.post('/api/admin/teams/upload', async (req, res) => {
     if (header.toLowerCase() !== expectedHeader.toLowerCase()) {
       return res.status(400).json({ error: `CSV header must be exactly: ${expectedHeader}` });
     }
-    fs.writeFileSync(TEAMS_CSV_PATH, csv.trim() + '\n', 'utf8');
-    loadTeamsCSV();
-    const count = teamNumberToTeam.size;
+    const count = await db.replaceTeamsFromCSV(csv.trim() + '\n');
     res.json({ ok: true, teamsCount: count });
   } catch (error) {
     console.error('Error uploading teams CSV:', error);
-    res.status(500).json({ error: 'Failed to save teams CSV' });
+    res.status(500).json({ error: error.message || 'Failed to save teams CSV' });
   }
 });
 

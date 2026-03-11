@@ -5,7 +5,7 @@ class MongoStore {
     this.uri = uri;
     this.dbName = dbName;
     this.collectionPrefix = collectionPrefix || '';
-    this.client = new MongoClient(this.uri, { serverSelectionTimeoutMS: 10000 });
+    this.client = new MongoClient(this.uri, { serverSelectionTimeoutMS: 15000 });
     this.db = null;
     this.collections = null;
   }
@@ -16,11 +16,13 @@ class MongoStore {
     this.db = this.client.db(this.dbName);
     const ps = this.db.collection(`${this.collectionPrefix}problem_statements`);
     const regs = this.db.collection(`${this.collectionPrefix}registrations`);
-    this.collections = { ps, regs };
+    const teams = this.db.collection(`${this.collectionPrefix}teams`);
+    this.collections = { ps, regs, teams };
     // indexes
     await ps.createIndex({ id: 1 }, { unique: true });
     await regs.createIndex({ teamNumber: 1 }, { unique: true });
     await regs.createIndex({ problemStatementId: 1 });
+    await teams.createIndex({ teamNumber: 1 }, { unique: true });
     // seed defaults if empty
     const count = await ps.estimatedDocumentCount();
     if (count === 0) {
@@ -288,11 +290,48 @@ class MongoStore {
 
   async resetAll() {
     if (!this.collections) await this.init();
-    const { ps, regs } = this.collections;
+    const { ps, regs, teams } = this.collections;
     await regs.deleteMany({});
     await ps.deleteMany({});
+    await teams.deleteMany({});
     await this.init();
     return true;
+  }
+
+  async getTeamByNumber(teamNumber) {
+    if (!this.collections) await this.init();
+    const { teams } = this.collections;
+    return await teams.findOne({ teamNumber: String(teamNumber).trim() });
+  }
+
+  async getAllTeams() {
+    if (!this.collections) await this.init();
+    const { teams } = this.collections;
+    return await teams.find({}).toArray();
+  }
+
+  async replaceTeamsFromCSV(csvContent) {
+    if (!this.collections) await this.init();
+    const { teams } = this.collections;
+    const lines = csvContent.trim().split(/\r?\n/).filter(Boolean);
+    const [header, ...rows] = lines;
+    const expected = 'teamNumber,teamName,teamLeader';
+    if (!header || header.trim().toLowerCase() !== expected.toLowerCase()) {
+      throw new Error(`CSV header must be exactly: ${expected}`);
+    }
+    const docs = [];
+    rows.forEach((line) => {
+      const parts = line.split(',');
+      if (parts.length < 3) return;
+      const teamNumber = String(parts[0]).trim();
+      const teamName = parts[1] !== undefined ? String(parts[1]).trim() : '';
+      const teamLeader = parts[2] !== undefined ? String(parts[2]).trim() : '';
+      if (!teamNumber) return;
+      docs.push({ teamNumber, teamName, teamLeader });
+    });
+    await teams.deleteMany({});
+    if (docs.length > 0) await teams.insertMany(docs);
+    return docs.length;
   }
 }
 
