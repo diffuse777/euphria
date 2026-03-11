@@ -769,19 +769,27 @@
       });
       // Add select button listeners
       list.querySelectorAll('.cyber-btn[data-id]').forEach(btn => {
-        btn.onclick = function() {
-          // Don't allow clicks on disabled buttons
-          if (btn.disabled) {
-            return;
-          }
+        btn.onclick = async function() {
+          if (btn.disabled) return;
           
           const psId = btn.getAttribute('data-id');
           const psTitle = btn.parentElement.querySelector('h2').textContent;
           const psDesc = btn.parentElement.querySelector('p').textContent;
-          // Get team details from form
-          const teamNumber = document.getElementById('teamNumber').value.trim();
-          const teamName = document.getElementById('teamName').value.trim();
-          const teamLeader = document.getElementById('teamLeader').value.trim();
+          let teamNumber = document.getElementById('teamNumber').value.trim();
+          let teamName = document.getElementById('teamName').value.trim();
+          let teamLeader = document.getElementById('teamLeader').value.trim();
+          
+          // If team details missing, fetch them before showing confirmation
+          if (teamNumber && (!teamName || !teamLeader)) {
+            const team = await fetchTeamByNumber(teamNumber);
+            if (team) {
+              teamName = team.teamName || '';
+              teamLeader = team.teamLeader || '';
+              document.getElementById('teamName').value = teamName;
+              document.getElementById('teamLeader').value = teamLeader;
+            }
+          }
+          
           let details = `<h3>Confirm Registration</h3>`;
           details += `<div class='modal-row'><span class='modal-label'>Team Number:</span> <span class='modal-value'>${teamNumber || 'Not entered'}</span></div>`;
           details += `<div class='modal-row'><span class='modal-label'>Team Name:</span> <span class='modal-value'>${teamName || 'Not entered'}</span></div>`;
@@ -791,10 +799,10 @@
           details += `<div class='modal-problem-desc'>${psDesc}</div>`;
           showCyberModal(details, () => {
             document.getElementById('selectedProblemId').value = psId;
-            // Only submit if all fields are filled
             if (teamNumber && teamName && teamLeader && psId) {
               document.getElementById('registerForm').requestSubmit();
             } else {
+              showErrorPopup('Please enter a valid team number to fetch team details first.');
               document.getElementById('registerForm').scrollIntoView({ behavior: 'smooth' });
             }
           });
