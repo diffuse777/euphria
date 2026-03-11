@@ -43,6 +43,28 @@ function formatProblems(statements) {
   });
 }
 
+// Initialize database - MongoDB only (must be before Vercel middleware that references db)
+const MONGODB_URI = process.env.MONGODB_URI;
+const dbName = process.env.MONGODB_DB || 'hackathon';
+const prefix = process.env.MONGODB_COLLECTION_PREFIX || '';
+let db = null;
+if (MONGODB_URI) {
+  db = new MongoStore(MONGODB_URI, dbName, prefix);
+} else {
+  console.error('FATAL: MONGODB_URI environment variable is required. Set it in .env or Vercel Environment Variables.');
+  if (!process.env.VERCEL) process.exit(1);
+}
+
+async function initializeDatabase() {
+  if (!db) return;
+  try {
+    await db.init();
+  } catch (error) {
+    console.error('Error during database initialization:', error);
+    throw error;
+  }
+}
+
 // Ensure database is initialized before handling any requests on Vercel
 let dbReadyPromise = null;
 if (process.env.VERCEL) {
@@ -70,33 +92,11 @@ if (process.env.NODE_ENV === 'production') {
   app.use('/api/', limiter);
 }
 
-// Initialize database - MongoDB only
-const MONGODB_URI = process.env.MONGODB_URI;
-const dbName = process.env.MONGODB_DB || 'hackathon';
-const prefix = process.env.MONGODB_COLLECTION_PREFIX || '';
-let db = null;
-if (MONGODB_URI) {
-  db = new MongoStore(MONGODB_URI, dbName, prefix);
-} else {
-  console.error('FATAL: MONGODB_URI environment variable is required. Set it in .env or Vercel Environment Variables.');
-  if (!process.env.VERCEL) process.exit(1);
-}
-
 // SSE for live updates
 const connectedClients = new Set();
 function broadcastUpdate(type, data) {
   const message = `data: ${JSON.stringify({ type, data, timestamp: new Date().toISOString() })}\n\n`;
   connectedClients.forEach((client) => { try { client.write(message); } catch (_) { connectedClients.delete(client); } });
-}
-
-async function initializeDatabase() {
-  if (!db) return;
-  try {
-    await db.init();
-  } catch (error) {
-    console.error('Error during database initialization:', error);
-    throw error;
-  }
 }
 
 // API
