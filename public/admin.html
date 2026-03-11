@@ -332,6 +332,37 @@
         #notification.error { background: #ef4444; box-shadow: 0 0 24px rgba(239, 68, 68, 0.4); }
         @keyframes slideIn { from{transform:translateX(110%);opacity:0} to{transform:translateX(0);opacity:1} }
 
+        /* ── CONFIRM MODAL ───────────────────────────────── */
+        .confirm-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10000; opacity: 0; visibility: hidden; transition: all .25s;
+        }
+        .confirm-overlay.show { opacity: 1; visibility: visible; }
+        .confirm-modal {
+            background: rgba(18, 18, 42, 0.98);
+            border: 2px solid #8b5cf6;
+            border-radius: 12px;
+            padding: 28px 32px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.4);
+        }
+        .confirm-modal h3 { color: #8b5cf6; margin-bottom: 14px; font-size: 1.2rem; }
+        .confirm-modal p { color: #94a3b8; margin-bottom: 22px; line-height: 1.5; font-size: 0.95rem; }
+        .confirm-modal .confirm-btns { display: flex; gap: 12px; justify-content: flex-end; }
+        .confirm-modal .btn-confirm {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: #fff; border: none; padding: 10px 24px;
+            border-radius: 8px; font-weight: 600; cursor: pointer;
+        }
+        .confirm-modal .btn-cancel {
+            background: transparent; color: #94a3b8;
+            border: 2px solid #64748b; padding: 10px 24px;
+            border-radius: 8px; font-weight: 600; cursor: pointer;
+        }
+        .confirm-modal .btn-cancel:hover { border-color: #8b5cf6; color: #e2e8f0; }
+
         /* ── LOADING ────────────────────────────────────── */
         .loading-text { color: #666; padding: 20px; text-align: center; font-size: 0.9rem; }
 
@@ -673,6 +704,17 @@ ps002,"NFT Marketplace","Build a secure NFT trading platform.",Blockchain,Interm
 
 <div id="notification"></div>
 
+<div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-modal">
+        <h3 id="confirmTitle">Confirm</h3>
+        <p id="confirmMessage"></p>
+        <div class="confirm-btns">
+            <button class="btn-cancel" id="confirmCancel">Cancel</button>
+            <button class="btn-confirm" id="confirmOk">Delete</button>
+        </div>
+    </div>
+</div>
+
 <script>
 /* ── AUTH ──────────────────────────────────────────────── */
 document.getElementById('loginForm').addEventListener('submit', function(e) {
@@ -808,15 +850,35 @@ function renderRegistrations(registrations) {
     document.getElementById('registrationsTable').style.display = 'block';
 }
 
+/* ── CONFIRM MODAL ─────────────────────────────────────── */
+function showConfirmModal(title, message, onConfirm, onCancel) {
+    const overlay = document.getElementById('confirmOverlay');
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    overlay.classList.add('show');
+    const cleanup = () => {
+        overlay.classList.remove('show');
+        document.getElementById('confirmOk').onclick = null;
+        document.getElementById('confirmCancel').onclick = null;
+    };
+    document.getElementById('confirmOk').onclick = () => { cleanup(); if (onConfirm) onConfirm(); };
+    document.getElementById('confirmCancel').onclick = () => { cleanup(); if (onCancel) onCancel(); };
+}
+
 /* ── DELETE PROBLEM ────────────────────────────────────── */
 async function deleteProblem(id, title) {
-    if (!confirm(`Delete problem statement "${title}"?\nThis will also remove related registrations.`)) return;
-    try {
-        const res = await fetch(`/api/problem-statements/${encodeURIComponent(id)}`, { method: 'DELETE', cache: 'no-store' });
-        if (!res.ok) { const e = await res.json(); throw new Error(e.error || res.statusText); }
-        showNotification(`Deleted: ${title}`);
-        fetchData();
-    } catch (err) { showNotification('Delete failed: ' + err.message, true); }
+    showConfirmModal(
+        'Confirm Delete',
+        `Are you sure you want to delete "${title}"? This will also remove all related registrations.`,
+        async () => {
+            try {
+                const res = await fetch(`/api/problem-statements/${encodeURIComponent(id)}`, { method: 'DELETE', cache: 'no-store' });
+                if (!res.ok) { const e = await res.json(); throw new Error(e.error || res.statusText); }
+                showNotification(`Deleted: ${title}`);
+                fetchData();
+            } catch (err) { showNotification('Delete failed: ' + err.message, true); }
+        }
+    );
 }
 
 /* ── DELETE REGISTRATION ───────────────────────────────── */
