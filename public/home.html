@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Prism - Home</title>
+  <link rel="stylesheet" href="prism-theme.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; width: 100%; overflow-x: hidden; }
+    .prism-body { position: relative; z-index: 1; }
+    .header-logos {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 32px; gap: 32px;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+      box-shadow: 0 4px 30px rgba(139, 92, 246, 0.15);
+      background: rgba(10, 10, 26, 0.5);
+      position: relative; z-index: 2;
+    }
+    .header-logos .header-left { flex: 1; display: flex; justify-content: flex-start; }
+    .header-logos .header-center { flex: 1; display: flex; justify-content: center; }
+    .header-logos .header-right { flex: 1; display: flex; justify-content: flex-end; }
+    .header-logos img {
+      height: 50px; width: auto; object-fit: contain;
+      filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.3));
+      transition: transform 0.3s;
+    }
+    .header-logos img:hover { transform: scale(1.05); }
+    .header-logos .euphoria-banner {
+      height: 75px; max-width: 720px;
+    }
+    .header-logos .chapter-logo { height: 55px; }
+    @media (max-width: 768px) {
+      .header-logos { gap: 16px; padding: 16px 20px; flex-wrap: wrap; justify-content: center; }
+      .header-logos .header-left, .header-logos .header-center, .header-logos .header-right { flex: none; justify-content: center; }
+      .header-logos img { height: 40px; }
+      .header-logos .euphoria-banner { height: 55px; max-width: 280px; }
+      .header-logos .chapter-logo { height: 45px; }
+    }
+    .main {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 75vh; padding: 40px 20px; max-width: 1200px; margin: 0 auto;
+    }
+    .main-title {
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .subtitle {
+      font-size: 1.4rem; color: #94a3b8; margin-bottom: 12px;
+      font-weight: 500; text-align: center; letter-spacing: 2px;
+    }
+    .desc {
+      font-size: 1.1rem; color: #94a3b8; margin-bottom: 36px;
+      text-align: center; max-width: 700px; line-height: 1.6;
+    }
+    .btn-row { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
+    .main-btn {
+      margin: 0; border-radius: 10px; border: none; cursor: pointer;
+      font-size: 1rem; padding: 16px 36px; outline: none;
+      font-family: 'Orbitron', sans-serif; font-weight: 700; letter-spacing: 2px;
+    }
+    .main-btn.primary {
+      background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #ec4899 100%);
+      background-size: 200% 200%;
+      color: #fff !important;
+      box-shadow: 0 0 30px rgba(139, 92, 246, 0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .main-btn.primary:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 0 50px rgba(217, 70, 239, 0.6), 0 0 80px rgba(139, 92, 246, 0.3);
+      background-position: 100% 50%;
+    }
+    .main-btn.secondary {
+      background: transparent; color: #22c55e !important;
+      border: 2px solid #22c55e;
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+      transition: all 0.3s;
+    }
+    .main-btn.secondary:hover {
+      background: rgba(34, 197, 94, 0.2);
+      box-shadow: 0 0 40px rgba(34, 197, 94, 0.5);
+      transform: translateY(-2px);
+    }
+    .info-cards {
+      display: flex; justify-content: center; gap: 28px;
+      margin-top: 24px; flex-wrap: wrap; width: 100%;
+    }
+    .info-card {
+      background: rgba(18, 18, 42, 0.9);
+      border: 2px solid #22c55e;
+      border-radius: 16px;
+      padding: 28px 36px;
+      min-width: 200px; max-width: 280px;
+      text-align: center;
+      color: #e2e8f0;
+      box-shadow: 0 0 25px rgba(34, 197, 94, 0.3), inset 0 0 60px rgba(34, 197, 94, 0.05);
+      backdrop-filter: blur(12px);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: linear-gradient(45deg, transparent 40%, rgba(34, 197, 94, 0.06) 50%, transparent 60%);
+      animation: prismShimmer 6s linear infinite;
+    }
+    .info-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 0 50px rgba(34, 197, 94, 0.5), 0 0 80px rgba(6, 182, 212, 0.2);
+      border-color: #06b6d4;
+    }
+    .info-label {
+      font-size: 0.9rem; font-weight: 700; color: #22c55e;
+      margin-bottom: 8px; letter-spacing: 2px; text-transform: uppercase;
+      position: relative; z-index: 1;
+    }
+    .info-value { font-size: 1.2rem; color: #fff; font-weight: 600; position: relative; z-index: 1; }
+    .site-footer {
+      overflow: hidden; padding: 20px 0; font-size: 0.9rem;
+      color: #94a3b8; opacity: 0.9; width: 100%; position: relative; z-index: 1;
+      border-top: 1px solid rgba(139, 92, 246, 0.4);
+    }
+    .footer-marquee { overflow: hidden; width: 100%; }
+    .footer-marquee-inner {
+      display: inline-block; white-space: nowrap; padding-left: 100%;
+      animation: footerMarquee 25s linear infinite;
+    }
+    @keyframes footerMarquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+    .cyber-modal {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(10, 10, 26, 0.9);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; visibility: hidden; opacity: 0; transition: opacity 0.3s;
+    }
+    .cyber-modal.active { visibility: visible; opacity: 1; }
+    .cyber-modal-content {
+      background: rgba(18, 18, 42, 0.98);
+      border: 2px solid #8b5cf6;
+      border-radius: 16px;
+      box-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
+      padding: 36px 44px 28px;
+      color: #e2e8f0;
+      min-width: 340px; max-width: 95vw; max-height: 85vh; overflow-y: auto;
+    }
+    .cyber-modal-content h3 {
+      margin: 0 0 20px 0; font-size: 1.4rem;
+      color: #8b5cf6; font-weight: 700; text-align: center;
+    }
+    .cyber-modal-btns { margin-top: 24px; display: flex; justify-content: center; }
+    .cyber-modal-btn {
+      background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
+      color: #fff !important; border: none; border-radius: 10px;
+      font-size: 1rem; padding: 12px 32px; cursor: pointer;
+      font-family: 'Orbitron', sans-serif; font-weight: 600;
+    }
+    .criteria-section {
+      margin-bottom: 24px; padding: 20px;
+      background: rgba(18, 18, 42, 0.6);
+      border-radius: 10px; border-left: 4px solid #8b5cf6;
+    }
+    .criteria-section h3 { color: #8b5cf6; font-size: 1.2rem; margin-bottom: 12px; }
+    .criteria-section h4 { color: #e2e8f0; font-size: 1.05rem; margin: 16px 0 8px 0; }
+    .criteria-section ul { margin: 8px 0; padding-left: 20px; }
+    .criteria-section li { margin-bottom: 8px; line-height: 1.5; color: #94a3b8; }
+    .criteria-item {
+      background: rgba(18, 18, 42, 0.8);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 8px; padding: 12px; margin-bottom: 8px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .criteria-item .criteria-name { font-weight: 600; color: #d946ef; flex: 1; }
+    .criteria-item .criteria-weight {
+      background: linear-gradient(135deg, #8b5cf6, #d946ef);
+      color: #fff; padding: 4px 10px; border-radius: 6px;
+      font-size: 0.9rem; font-weight: 600; margin-left: 12px;
+    }
+    .criteria-item .criteria-description { color: #94a3b8; font-size: 0.9rem; margin-top: 4px; }
+    .criteria-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (max-width: 768px) {
+      .main { padding: 24px 16px; }
+      .info-card { padding: 20px 24px; min-width: 160px; }
+      .cyber-modal-content { padding: 24px 20px; }
+    }
+    @media (max-width: 480px) {
+      .btn-row { flex-direction: column; align-items: center; }
+      .main-btn { width: 100%; max-width: 280px; }
+    }
+  </style>
+</head>
+<body class="prism-body">
+  <!-- Floating prism crystals -->
+  <div class="prism-crystal prism-crystal-sm" style="top: 15%; left: 8%; animation-delay: 0s;"></div>
+  <div class="prism-crystal prism-crystal-lg" style="top: 60%; right: 5%; animation-delay: -5s;"></div>
+  <div class="prism-crystal prism-crystal-sm" style="top: 80%; left: 15%; animation-delay: -10s;"></div>
+  <header class="header-logos">
+    <div class="header-left">
+      <img src="cybernerds-logo.png" alt="Cybernerds KARE Student Chapter" class="chapter-logo" title="Cybernerds" />
+    </div>
+    <div class="header-center">
+      <img src="euphoria-logo.png" alt="EUPHORIA - A Techno Management Meet" class="euphoria-banner" title="EUPHORIA March 13-14, 2026" />
+    </div>
+    <div class="header-right">
+      <img src="owasp-logo.png" alt="OWASP KARE Student Chapter" class="chapter-logo" title="OWASP" />
+    </div>
+  </header>
+  <div class="main" style="max-width:1400px; margin:0 auto;">
+    <div class="main-title prism-title">Project Prism</div>
+    <div class="subtitle">Euphoria Techno Management Meet 2026</div>
+    <div class="desc">Project Prism is an exciting project showcase event organized by the Kalasalingam Academy of Research and Education, under the School of Computing – Department of Computer Science and Engineering. It is conducted as part of Euphoria Techno Management Meet 2026, bringing together innovative minds to present creative technology solutions.</div>
+    <div class="btn-row">
+      <button class="main-btn primary" onclick="window.location.href='/problem'">SELECT PROBLEM STATEMENT</button>
+      <button class="main-btn secondary" id="evaluationCriteriaBtn">📋 EVALUATION CRITERIA</button>
+    </div>
+    <div class="info-cards">
+      <div class="info-card">
+        <div class="info-label">&#128197; DATE AND TIME</div>
+        <div class="info-value">13th March 9:30AM</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">&#128205; VENUE</div>
+        <div class="info-value">8th Block 8601 LAB</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">&#127942; PRIZE POOL</div>
+        <div class="info-value">₹15,000</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Evaluation Criteria Modal -->
+  <div class="cyber-modal" id="evaluationModal">
+    <div class="cyber-modal-content" style="max-width: 900px; max-height: 80vh; overflow-y: auto;">
+      <div id="evaluationModalContent"></div>
+      <div class="cyber-modal-btns">
+        <button class="cyber-modal-btn" id="evaluationModalClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+
+    // Evaluation Criteria functionality
+    async function fetchEvaluationCriteria() {
+      try {
+        const res = await fetch('/api/evaluation-criteria', { cache: 'no-store' });
+        return await res.json();
+      } catch (error) {
+        console.error('Error fetching evaluation criteria:', error);
+        return null;
+      }
+    }
+
+    function renderEvaluationCriteria(criteria) {
+      if (!criteria) {
+        return '<p>Evaluation criteria not available.</p>';
+      }
+
+      let html = '<h3 style="color: #8b5cf6; margin-bottom: 20px; text-align: center;">📋 Evaluation Criteria</h3>';
+
+      // Technical Requirements
+      if (criteria.technicalRequirements) {
+        html += `
+          <div class="criteria-section">
+            <h3>${criteria.technicalRequirements.title}</h3>
+            <ul>
+              ${criteria.technicalRequirements.requirements.map(req => `<li>${req}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      // Goals & Deliverables
+      if (criteria.goalsDeliverables) {
+        html += `
+          <div class="criteria-section">
+            <h3>${criteria.goalsDeliverables.title}</h3>
+            <ul>
+              ${criteria.goalsDeliverables.goals.map(goal => `<li>${goal}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      // Judging Rubric
+      if (criteria.judgingRubric) {
+        html += '<div class="criteria-section">';
+        
+        // Round 1
+        if (criteria.judgingRubric.round1) {
+          html += `
+            <h4>${criteria.judgingRubric.round1.title}</h4>
+            <div class="criteria-grid">
+              ${criteria.judgingRubric.round1.criteria.map(criterion => `
+                <div class="criteria-item">
+                  <div>
+                    <div class="criteria-name">${criterion.name}</div>
+                    <div class="criteria-description">${criterion.description}</div>
+                  </div>
+                  <div class="criteria-weight">${criterion.weight}</div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        // Round 2
+        if (criteria.judgingRubric.round2) {
+          html += `
+            <h4 style="margin-top: 24px;">${criteria.judgingRubric.round2.title}</h4>
+            <div class="criteria-grid">
+              ${criteria.judgingRubric.round2.criteria.map(criterion => `
+                <div class="criteria-item">
+                  <div>
+                    <div class="criteria-name">${criterion.name}</div>
+                    <div class="criteria-description">${criterion.description}</div>
+                  </div>
+                  <div class="criteria-weight">${criterion.weight}</div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        html += '</div>';
+      }
+
+      return html;
+    }
+
+    function showEvaluationCriteriaModal() {
+      const modal = document.getElementById('evaluationModal');
+      const content = document.getElementById('evaluationModalContent');
+      
+      content.innerHTML = '<div style="text-align: center; padding: 20px;"><div style="display: inline-block; width: 40px; height: 40px; border: 4px solid rgba(139,92,246,0.2); border-top: 4px solid #8b5cf6; border-radius: 50%; animation: spin 1s linear infinite;"></div><p style="margin-top: 16px; color: #94a3b8;">Loading evaluation criteria...</p></div>';
+      modal.classList.add('active');
+
+      fetchEvaluationCriteria().then(criteria => {
+        content.innerHTML = renderEvaluationCriteria(criteria);
+      }).catch(error => {
+        content.innerHTML = '<p style="color: #d946ef; text-align: center; padding: 20px;">Error loading evaluation criteria. Please try again later.</p>';
+      });
+    }
+
+    function hideEvaluationCriteriaModal() {
+      const modal = document.getElementById('evaluationModal');
+      modal.classList.remove('active');
+    }
+
+    // Add event listeners
+    document.getElementById('evaluationCriteriaBtn').addEventListener('click', showEvaluationCriteriaModal);
+    document.getElementById('evaluationModalClose').addEventListener('click', hideEvaluationCriteriaModal);
+
+    // Close modal when clicking outside
+    document.getElementById('evaluationModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        hideEvaluationCriteriaModal();
+      }
+    });
+
+    // Add spin animation for loading
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+  <footer class="site-footer">
+    <div class="footer-marquee">
+      <span class="footer-marquee-inner">DESIGNED AND DEVELOPED BY WEB DEV TEAM CYBERNERDS X OWASP KARE</span>
+    </div>
+  </footer>
+</body>
+</html>
