@@ -394,6 +394,24 @@ app.delete('/api/admin/teams', async (req, res) => {
   }
 });
 
+// Admin: add a single team manually
+app.post('/api/admin/teams/add', async (req, res) => {
+  try {
+    const { teamNumber, teamName, teamLeader } = req.body;
+    if (!teamNumber || !String(teamNumber).trim()) {
+      return res.status(400).json({ error: 'Team number is required' });
+    }
+    const result = await db.addTeam(teamNumber, teamName, teamLeader);
+    if (!result.ok) {
+      return res.status(409).json({ error: result.error || 'Failed to add team' });
+    }
+    res.json({ ok: true, message: 'Team added successfully' });
+  } catch (error) {
+    console.error('Error adding team:', error);
+    res.status(500).json({ error: 'Failed to add team' });
+  }
+});
+
 // Admin: upload teams CSV (stores in MongoDB - works on Vercel serverless)
 app.post('/api/admin/teams/upload', async (req, res) => {
   try {

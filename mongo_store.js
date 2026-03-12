@@ -317,6 +317,24 @@ class MongoStore {
     return result.deletedCount || 0;
   }
 
+  async addTeam(teamNumber, teamName, teamLeader) {
+    if (!this.collections) await this.init();
+    const { teams } = this.collections;
+    const target = String(teamNumber).trim();
+    if (!target) return { ok: false, error: 'Team number is required' };
+    try {
+      await teams.insertOne({
+        teamNumber: target,
+        teamName: String(teamName || '').trim(),
+        teamLeader: String(teamLeader || '').trim()
+      });
+      return { ok: true };
+    } catch (e) {
+      if (e.code === 11000) return { ok: false, error: 'Team number already exists' };
+      throw e;
+    }
+  }
+
   async replaceTeamsFromCSV(csvContent) {
     if (!this.collections) await this.init();
     const { teams } = this.collections;

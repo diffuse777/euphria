@@ -637,15 +637,54 @@ ps002,"NFT Marketplace","Build a secure NFT trading platform.",Blockchain,Interm
 
             <!-- ADD TEAMS PAGE -->
             <div class="page" id="page-add-teams">
-                <div class="section">
-                    <div class="section-header">
-                        <div class="section-header-left">👥 Add Teams via CSV</div>
+                <div class="add-options">
+                    <div class="add-option-card" id="teamsOptManual" onclick="selectTeamsAddOption('manual')">
+                        <div class="option-icon">✍️</div>
+                        <div class="option-title">Enter Manually</div>
+                        <div class="option-desc">Add a single team by filling in the form with team number, name, and leader.</div>
                     </div>
-                    <div class="section-body">
-                        <p style="color:#aaa;margin-bottom:20px;font-size:0.9rem;">
-                            Upload a CSV file to add teams. These teams will be used for auto-fill on the problem selection page.
-                            <strong style="color:#d946ef;">Uploading replaces all existing teams.</strong>
-                        </p>
+                    <div class="add-option-card" id="teamsOptCsv" onclick="selectTeamsAddOption('csv')">
+                        <div class="option-icon">📂</div>
+                        <div class="option-title">Upload via CSV</div>
+                        <div class="option-desc">Upload a CSV file to bulk-add multiple teams at once. Replaces all existing teams.</div>
+                    </div>
+                </div>
+
+                <!-- Manual Add Team Form -->
+                <div class="form-panel" id="teamsManualForm">
+                    <h3>✍️ Add Team Manually</h3>
+                    <form id="addTeamForm" onsubmit="submitManualTeam(event)">
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Team Number *</label>
+                                <input type="text" id="teamNum" placeholder="e.g. 1" required>
+                                <div class="hint">Unique identifier for the team</div>
+                            </div>
+                            <div class="field">
+                                <label>Team Name *</label>
+                                <input type="text" id="teamNameInput" placeholder="e.g. Team Alpha" required>
+                            </div>
+                        </div>
+                        <div class="form-row full">
+                            <div class="field">
+                                <label>Team Leader *</label>
+                                <input type="text" id="teamLeaderInput" placeholder="e.g. John Doe" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn">➕ Add Team</button>
+                            <button type="button" class="btn btn-outline" onclick="resetManualTeamForm()">🔄 Clear</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- CSV Upload Form -->
+                <div class="form-panel" id="teamsCsvForm">
+                    <h3>📂 Upload Teams via CSV</h3>
+                    <p style="color:#aaa;margin-bottom:20px;font-size:0.9rem;">
+                        Upload a CSV file to add teams. These teams will be used for auto-fill on the problem selection page.
+                        <strong style="color:#d946ef;">Uploading replaces all existing teams.</strong>
+                    </p>
 
                         <div class="csv-drop-area" id="teamsCsvDropArea" onclick="document.getElementById('teamsCsvFileInput').click()">
                             <div class="drop-icon">📁</div>
@@ -673,25 +712,27 @@ ps002,"NFT Marketplace","Build a secure NFT trading platform.",Blockchain,Interm
                                 • Use quotes if a value contains commas.
                             </div>
                         </div>
+                </div><!-- /teamsCsvForm -->
 
-                        <div class="section" style="margin-top:28px;border:none;background:transparent;">
-                            <div class="section-header">
-                                <div class="section-header-left">📋 Current Teams</div>
-                                <button class="btn btn-outline btn-sm" onclick="loadCurrentTeams()">🔄 Refresh</button>
-                                <button class="btn btn-outline btn-sm" style="margin-left:8px;color:#f87171;border-color:#f87171;" onclick="deleteAllTeams()">🗑 Delete Teams</button>
-                            </div>
-                            <div class="section-body">
-                                <div id="currentTeamsLoading" class="loading-text">Loading…</div>
-                                <div id="currentTeamsTable" style="display:none;">
-                                    <div class="table-wrap">
-                                        <table>
-                                            <thead>
-                                                <tr><th>Team #</th><th>Team Name</th><th>Leader</th></tr>
-                                            </thead>
-                                            <tbody id="currentTeamsBody"></tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                <!-- Current Teams (always visible on Add Teams page) -->
+                <div class="section" style="margin-top:28px;">
+                    <div class="section-header">
+                        <div class="section-header-left">📋 Current Teams</div>
+                        <div class="section-header-actions">
+                            <button class="btn btn-outline btn-sm" onclick="loadCurrentTeams()">🔄 Refresh</button>
+                            <button class="btn btn-outline btn-sm" style="color:#f87171;border-color:#f87171;" onclick="deleteAllTeams()">🗑 Delete Teams</button>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div id="currentTeamsLoading" class="loading-text">Loading…</div>
+                        <div id="currentTeamsTable" style="display:none;">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr><th>Team #</th><th>Team Name</th><th>Leader</th></tr>
+                                    </thead>
+                                    <tbody id="currentTeamsBody"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -752,14 +793,28 @@ function navigateTo(page) {
 
 /* ── ADD OPTION SELECTION ─────────────────────────────── */
 function selectAddOption(type) {
-    document.querySelectorAll('.add-option-card').forEach(c => c.classList.remove('selected'));
-    document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('visible'));
+    document.querySelectorAll('#page-add-problems .add-option-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('manualForm').classList.remove('visible');
+    document.getElementById('csvForm').classList.remove('visible');
     if (type === 'manual') {
         document.getElementById('optManual').classList.add('selected');
         document.getElementById('manualForm').classList.add('visible');
     } else {
         document.getElementById('optCsv').classList.add('selected');
         document.getElementById('csvForm').classList.add('visible');
+    }
+}
+
+function selectTeamsAddOption(type) {
+    document.querySelectorAll('#page-add-teams .add-option-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('teamsManualForm').classList.remove('visible');
+    document.getElementById('teamsCsvForm').classList.remove('visible');
+    if (type === 'manual') {
+        document.getElementById('teamsOptManual').classList.add('selected');
+        document.getElementById('teamsManualForm').classList.add('visible');
+    } else {
+        document.getElementById('teamsOptCsv').classList.add('selected');
+        document.getElementById('teamsCsvForm').classList.add('visible');
     }
 }
 
@@ -1043,7 +1098,34 @@ function clearCsv() {
     document.getElementById('csvFileInput').value = '';
 }
 
-/* ── ADD TEAMS CSV ──────────────────────────────────────── */
+/* ── ADD TEAMS (MANUAL + CSV) ───────────────────────────── */
+async function submitManualTeam(e) {
+    e.preventDefault();
+    const teamNumber = document.getElementById('teamNum').value.trim();
+    const teamName = document.getElementById('teamNameInput').value.trim();
+    const teamLeader = document.getElementById('teamLeaderInput').value.trim();
+    if (!teamNumber || !teamName || !teamLeader) {
+        showNotification('Please fill all fields.', true);
+        return;
+    }
+    try {
+        const res = await fetch('/api/admin/teams/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ teamNumber, teamName, teamLeader })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || res.statusText);
+        showNotification(`✅ Team ${teamNumber} added successfully`);
+        resetManualTeamForm();
+        loadCurrentTeams();
+    } catch (err) { showNotification('Error: ' + err.message, true); }
+}
+
+function resetManualTeamForm() {
+    document.getElementById('addTeamForm').reset();
+}
+
 let teamsCsvContent = '';
 
 document.getElementById('teamsCsvDropArea').addEventListener('dragover', e => {
@@ -1142,7 +1224,7 @@ async function loadCurrentTeams() {
         const teams = await res.json();
         tbody.innerHTML = '';
         if (teams.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="3">No teams added yet. Upload a CSV above.</td></tr>';
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="3">No teams added yet. Enter manually or upload a CSV above.</td></tr>';
         } else {
             teams.sort((a, b) => {
                 const na = parseInt(a.teamNumber, 10), nb = parseInt(b.teamNumber, 10);
